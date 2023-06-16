@@ -1,48 +1,105 @@
+import argparse
 import math
+import sys
 
-def calculate_monthly_payments(principal, payment, interest):
-    interest = interest / 100 / 12
-    months = math.log(payment / (payment - interest * principal), 1 + interest)
-    return math.ceil(months)
+parser = argparse.ArgumentParser()
+parser.add_argument("--type", type=str)
+parser.add_argument("--payment", type=int)
+parser.add_argument("--principal", type=int)
+parser.add_argument("--periods", type=int)
+parser.add_argument("--interest", type=float)
+args = parser.parse_args()
 
-def calculate_monthly_payment(principal, periods, interest):
-    interest = interest / 100 / 12
-    payment = principal * (interest * pow(1 + interest, periods)) / (pow(1 + interest, periods) - 1)
-    return math.ceil(payment)
 
-def calculate_loan_principal(payment, periods, interest):
-    interest = interest / 100 / 12
-    principal = payment / ((interest * pow(1 + interest, periods)) / (pow(1 + interest, periods) - 1))
-    return principal
+def incorrect_params():
+    print("Incorrect parameters")
+    sys.exit(1)
 
-calculation_type = input("What do you want to calculate?\n"
-                         'type "n" for number of monthly payments,\n'
-                         'type "a" for annuity monthly payment amount,\n'
-                         'type "p" for loan principal:\n')
 
-if calculation_type == 'n':
-    principal = float(input("Enter the loan principal:\n"))
-    payment = float(input("Enter the monthly payment:\n"))
-    interest = float(input("Enter the loan interest:\n"))
-    months = calculate_monthly_payments(principal, payment, interest)
-    years, months = divmod(months, 12)
-    if years == 0:
-        print(f"It will take {months} months to repay this loan!")
-    elif months == 0:
-        print(f"It will take {years} years to repay this loan!")
+if len(sys.argv) != 5 or args.interest is None:
+    incorrect_params()
+else:
+    for v in vars(args).values():
+        if type(v) in (int, float) and v < 0:
+            incorrect_params()
+
+    payment, principal, periods = args.payment, args.principal, args.periods
+    nominal_interest = args.interest / (12 * 100)
+
+    if args.type == "annuity":
+        if args.payment and args.periods:
+            principal = math.floor(
+                args.payment
+                / (
+                        (nominal_interest * pow(1 + nominal_interest, periods))
+                        / (pow(1 + nominal_interest, periods) - 1)
+                )
+            )
+
+            print(f"Your loan principal = {principal}!")
+        elif args.payment and args.principal:
+
+            def convert_months_to_human(n_months):
+                months = n_months % 12
+                years = n_months // 12
+                months_word, years_word = None, None
+
+                if months == 1:
+                    months_word = "month"
+                elif months > 1:
+                    months_word = "months"
+
+                if years == 1:
+                    years_word = "year"
+                elif years > 1:
+                    years_word = "years"
+
+                if years and months:
+                    return f"{years} {years_word} and {months} {months_word}"
+                elif years:
+                    return f"{years} {years_word}"
+                elif months:
+                    return f"{months} {months_word}"
+
+            periods = math.ceil(
+                math.log(
+                    args.payment / (args.payment - nominal_interest * args.principal),
+                    1 + nominal_interest,
+                    )
+            )
+
+            print(
+                f"It will take {convert_months_to_human(periods)} to repay this loan!"
+            )
+        elif args.principal and args.periods:
+            payment = math.ceil(
+                args.principal
+                * (
+                        (nominal_interest * pow(1 + nominal_interest, periods))
+                        / (pow(1 + nominal_interest, periods) - 1)
+                )
+            )
+
+            print(f"Your annuity payment = {payment}!")
+
+        print(f"Overpayment = {payment * periods - principal}")
+    elif args.type == "diff":
+        if args.payment:
+            incorrect_params()
+        else:
+            total = 0
+
+            for month in range(1, periods + 1):
+                diff_payment = math.ceil(
+                    principal / periods
+                    + nominal_interest
+                    * (principal - (principal * (month - 1) / periods))
+                )
+
+                total += diff_payment
+
+                print(f"Month {month}: payment is {diff_payment}")
+
+            print(f"\nOverpayment = {math.ceil(total) - principal}")
     else:
-        print(f"It will take {years} years and {months} months to repay this loan!")
-
-elif calculation_type == 'a':
-    principal = float(input("Enter the loan principal:\n"))
-    periods = int(input("Enter the number of periods:\n"))
-    interest = float(input("Enter the loan interest:\n"))
-    payment = calculate_monthly_payment(principal, periods, interest)
-    print(f"Your monthly payment = {payment}!")
-
-elif calculation_type == 'p':
-    payment = float(input("Enter the annuity payment:\n"))
-    periods = int(input("Enter the number of periods:\n"))
-    interest = float(input("Enter the loan interest:\n"))
-    principal = calculate_loan_principal(payment, periods, interest)
-    print(f"Your loan principal = {principal}!")
+        incorrect_params()

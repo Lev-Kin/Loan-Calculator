@@ -127,8 +127,17 @@ files:
         LoanCalcTest('creditcalc.creditcalc').run_tests()
   learner_created: false
 feedback_link: https://hyperskill.org/learn/step/8004#comment
-status: Solved
+status: Failed
 feedback:
-  message: Congratulations!
-  time: "Fri, 16 Jun 2023 06:28:20 UTC"
-record: -1
+  message: |-
+    Wrong answer in test #1
+
+    No numbers in the answer
+
+    Please find below the output of your program during this failed test.
+
+    ---
+
+    Incorrect parameters
+  time: "Fri, 16 Jun 2023 08:32:26 UTC"
+record: 3
